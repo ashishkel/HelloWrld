@@ -89,3 +89,52 @@ scottbb
     You made your /boot beautiful again :> Even if you borked the whole directory it should only be a matter of reinstalling linux package, generating initrd, installing grub and making grub config. – 
     jdwolf
     Commented Jan 5, 2018 at 23:24 
+
+
+
+---------------- AND I ruined mine --------------------
+Then from here --> https://discussion.fedoraproject.org/t/repair-reinstall-grub-after-windows-11-update-dual-boot-fedora-f39/113155/6 --> RAN this -->  grub2-mkconfig -o /boot/grub2/grub.cfg
+
+
+Mount the Fedora Partition:
+
+    Once you’re in the Fedora Live environment, open a terminal.
+    Identify the partition where Fedora is installed. You can use the lsblk command to list all available block devices and their mount points.
+
+Identify and Mount Partitions:
+
+    Once you’re in the Fedora Live environment, open a terminal.
+
+    Use the lsblk command to identify the partitions. Typically, you’ll have a separate boot partition (e.g., /dev/sda1) and the root partition (e.g., /dev/sda2 for Fedora).
+
+    Mount the root partition:
+    sudo mount /dev/sda2 /mnt
+
+    Mount The Boot paritions:
+    sudo mount /dev/sda1 /mnt/boot
+
+    Prepare the systemd-nspawn Environment:
+
+    sudo systemd-nspawn -D /mnt
+
+    Reinstall GRUB:
+
+    grub2-install /dev/sda
+
+    Update GRUB Configuration:
+
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+
+    Exit the systemd-nspawn environment:
+
+    exit
+
+    Then, unmount the partitions:
+
+    sudo umount /mnt/boot /mnt
+
+    Safely reboot your system and remove the Fedora Live media.
+
+You should see the GRUB menu allowing you to choose between Windows and Fedora. Test both entries to ensure they boot correctly.
+
+If anything else, please let us know.
