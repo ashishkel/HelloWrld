@@ -49,11 +49,28 @@
       <span class="small">by <a href="http://github.com/ashishkel">ashishkel</a></span></h1>
 
     <div class="description">
-      HellWorld Java
+      
+
+The hostname does nothing about node roles.
+
+If you do kubeadm init, the node will be a master node (currently called control plane).
+
+This node can also be used as a worker node (currently called just a node), but by default, Pods cannot be scheduled on the control plane node.
+
+You can turn off this restriction by removing its taints with the following command:
+
+kubectl taint nodes --all node-role.kubernetes.io/master-
+kubectl taint nodes --all  node-role.kubernetes.io/control-plane-
+
+and then you can use this node as both control-plane and node.
+
+But I guess some small kubernetes like k0s, k3s, and microk8s are better options for your use case rather than kubeadm.
+
     </div>
 
     <h2>Contact</h2>
-<p> (ashishkumar.l@tcs.com)<br/>      </p>
+<p> (ashishkumar.l@tcs.com)
+<br/>      </p>
 
 
     <h2>Download</h2>
