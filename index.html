@@ -12,3 +12,80 @@ kubectl taint nodes --all  node-role.kubernetes.io/control-plane-
 and then you can use this node as both control-plane and node.
 
 But I guess some small kubernetes like k0s, k3s, and microk8s are better options for your use case rather than kubeadm.
+
+
+
+
+
+https://unix.stackexchange.com/questions/415097/how-do-i-cleanup-a-boot-partition-that-cant-be-cleaned-up-with-package-cleanup
+jdwolf's answer produced a listing of which packages (on the old system) that provided the entries in /boot/*, but it was a bit voluminous, and not immediately apparent what files were not pertinent to my reinstall of CentOS. And example of some of the output:
+
+$ yum whatprovides /boot/*
+
+kernel-3.10.0-693.5.2.el7.x86_64 : The Linux kernel
+Repo        : updates
+Matched from:
+Filename    : /boot/config-3.10.0-693.5.2.el7.x86_64
+
+kernel-3.10.0-693.el7.x86_64 : The Linux kernel
+Repo        : base
+Matched from:
+Filename    : /boot/config-3.10.0-693.el7.x86_64
+
+fwupdate-efi-9-8.el7.x86_64 : UEFI binaries used by libfwup
+Repo        : base
+Matched from:
+Filename    : /boot/efi
+
+[... truncated output ...]
+
+But that led me to use rpm -q --whatprovides /boot/* instead, which was much more useful to determine if the file was needed:
+
+$ rpm -q --whatprovides /boot/*
+file /boot/config-3.10.0-693.11.1.el7.x86_64 is not owned by any package
+file /boot/config-3.10.0-693.11.1.el7.x86_64.debug is not owned by any package
+file /boot/config-3.10.0-693.5.2.el7.x86_64 is not owned by any package
+kernel-3.10.0-693.el7.x86_64
+file /boot/efi is not owned by any package
+file /boot/elf-memtest86+-5.01 is not owned by any package
+file /boot/grub is not owned by any package
+grub2-common-2.02-0.65.el7.centos.2.noarch
+[... truncated output ...]
+
+Note that rpm -q --whatprovides doesn't print the name of the input file if it matches a package that provides it. But it does return 0 if the file is provided by a package, and 1 if the file is not provided by a package. Thus, solution was trivially:
+
+$ for f in /boot/*; do rpm -q --whatprovides $f || rm -f $f; done
+file /boot/config-3.10.0-693.11.1.el7.x86_64 is not owned by any package
+file /boot/config-3.10.0-693.11.1.el7.x86_64.debug is not owned by any package
+file /boot/config-3.10.0-693.5.2.el7.x86_64 is not owned by any package
+kernel-3.10.0-693.el7.x86_64
+file /boot/efi is not owned by any package
+rm: cannot remove ‘/boot/efi’: Is a directory
+file /boot/elf-memtest86+-5.01 is not owned by any package
+[... truncated output ...]
+
+$ ls -1 /boot
+config-3.10.0-693.el7.x86_64
+efi
+grub
+grub2
+initramfs-3.10.0-693.el7.x86_64.img
+symvers-3.10.0-693.el7.x86_64.gz
+System.map-3.10.0-693.el7.x86_64
+vmlinuz-3.10.0-693.el7.x86_64
+
+After running grub2-mkconfig -o /boot/grub2/grub.cfg, my Grub menu is clean, and I have a clean /boot directory.
+
+Note: It would probably have been better or safer to use find /boot -type f -exec ... (or perhaps find ... -xargs ...), but my solution worked fine enough since rm -f doesn't delete directories.
+Share
+Improve this answer
+Follow
+answered Jan 5, 2018 at 23:20
+scottbb's user avatar
+scottbb
+57866 silver badges1515 bronze badges
+
+    1
+    You made your /boot beautiful again :> Even if you borked the whole directory it should only be a matter of reinstalling linux package, generating initrd, installing grub and making grub config. – 
+    jdwolf
+    Commented Jan 5, 2018 at 23:24 
